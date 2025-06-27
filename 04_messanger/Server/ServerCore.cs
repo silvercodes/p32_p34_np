@@ -38,7 +38,8 @@ internal class ServerCore
 
                 clients.Add(client);
 
-                _ = Task.Run(() => client.Processing());
+                // TODO: ??? :-O
+                _ = Task.Run(() => client.ProcessingAsync().Wait());
             }
 
         }

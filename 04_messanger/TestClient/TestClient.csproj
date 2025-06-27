@@ -7,4 +7,9 @@
     <Nullable>enable</Nullable>
   </PropertyGroup>
 
+  <ItemGroup>
+    <ProjectReference Include="..\MProto\MProto.csproj" />
+    <ProjectReference Include="..\MTypes\MTypes.csproj" />
+  </ItemGroup>
+
 </Project>
