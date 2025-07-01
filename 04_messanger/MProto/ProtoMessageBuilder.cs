@@ -16,7 +16,7 @@ public class ProtoMessageBuilder
     }
 
     public async Task<ProtoMessage<T>> ReceiveAsync<T>()
-        where T : IPayload
+        where T : class, IPayload
     {
         // 1. get len
         byte[] bytes = await ReadBytesAsync(ProtoMessageBuilder.MESSAGE_LEN_LABLE_SIZE);
@@ -32,15 +32,19 @@ public class ProtoMessageBuilder
 
         // 4. ExtractMetadata
         using StreamReader reader = new StreamReader(memStream);
-
         ExtractMetadata(pm, reader);
+
         // 5. Extract payload bytes
+        ExtractPayloadStream(pm);
+
+        // 6. Init paylod builder
+        pm.InitPaylodBuilder();
 
         return pm;
     }
 
     private void ExtractMetadata<T>(ProtoMessage<T> pm, StreamReader reader)
-        where T : IPayload
+        where T : class, IPayload
     {
         reader.BaseStream.Position = 0;
 
@@ -49,6 +53,17 @@ public class ProtoMessageBuilder
         string? headerLine;
         while (!string.IsNullOrEmpty(headerLine = reader.ReadLine()))
             pm.SetHeader(headerLine);
+    }
+    private void ExtractPayloadStream<T>(ProtoMessage<T> pm)
+        where T : class, IPayload
+    {
+        int payloadLength = pm.PayloadLength;
+
+        memStream.Seek(-payloadLength, SeekOrigin.End);
+
+        pm.PayloadStream = new MemoryStream(payloadLength);
+        memStream.CopyTo(pm.PayloadStream);
+        pm.PayloadStream.Position = 0;
     }
 
     private async Task<byte[]> ReadBytesAsync(int count)

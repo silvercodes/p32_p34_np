@@ -1,18 +1,47 @@
 ﻿using System.Security.Principal;
 using MProto.PayloadBase;
+using MProto.PayloadBuild;
 
 namespace MProto;
 
 public class ProtoMessage<T>
-    where T : IPayload
+    where T : class, IPayload
 {
     private const char HEADER_SEPARATOR = ':';
+    private const string HEADER_PAYLOAD_LEN_KEY = "len";
+    private const string HEADER_PAYLOAD_TYPE_KEY = "ctype";     // "content type"
+
+    private IPayloadBuilder<T> payloadBuilder = null!;
+
     public string Action { get; set; }
     public Dictionary<string, string> Headers { get; set; } = new Dictionary<string, string>();
+
     public T? Payload { get; private set; }
+   
     public MemoryStream? PayloadStream { get; internal set; }
+    public int PayloadLength
+    {
+        get
+        {
+            Headers.TryGetValue(HEADER_PAYLOAD_LEN_KEY, out string? value);
+            if (string.IsNullOrEmpty(value))
+                return 0;
 
+            // TODO: check if int
+            return Convert.ToInt32(value);
+        }
+    }
 
+    internal void InitPaylodBuilder()
+    {
+        payloadBuilder = Headers[HEADER_PAYLOAD_TYPE_KEY] switch
+        {
+            "json" => new JsonPayloadBuilder<T>(),
+
+            _ => throw new InvalidOperationException()
+        };
+    }
+    
     public void SetHeader(string key, string value)
     {
         Headers[key] = value;
@@ -32,6 +61,19 @@ public class ProtoMessage<T>
         Payload = payload;
 
         PayloadStream = Payload.GetStream();
+
+        Headers[HEADER_PAYLOAD_LEN_KEY] = PayloadStream.Length.ToString();
+        Headers[HEADER_PAYLOAD_TYPE_KEY] = Payload.CType;
+    }
+
+    public T? GetPayload()
+    {
+        if (PayloadStream is null)
+            return null;
+
+        Payload = payloadBuilder.BuildFromStream(PayloadStream);
+
+        return Payload;
     }
 
     public MemoryStream GetStream()

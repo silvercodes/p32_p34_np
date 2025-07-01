@@ -26,6 +26,8 @@ internal class Client
             while (true) 
             {
                 ProtoMessage<AuthRequestPayload> protoMessage = await builder.ReceiveAsync<AuthRequestPayload>();
+
+                AuthRequestPayload? p = protoMessage.GetPayload();
             }
         }
         catch (Exception)

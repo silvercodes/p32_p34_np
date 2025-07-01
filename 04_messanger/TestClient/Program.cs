@@ -21,9 +21,10 @@ try
     pm.SetHeader("u_id", "101");
     pm.SetPayload(new AuthRequestPayload("vasia@mail.com", "qwerty"));
 
-    while(true)
+    MemoryStream memoryStream = pm.GetStream();
+
+    while (true)
     {
-        MemoryStream memoryStream = pm.GetStream();
         Console.WriteLine("Press Enter to Send");
         Console.ReadLine();
         memoryStream.CopyTo(netStream);
